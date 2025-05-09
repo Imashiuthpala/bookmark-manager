@@ -20,15 +20,19 @@ jobs:
         with:
           node-version: '16'
 
-      # Install dependencies for linting
-      - name: Install Dependencies
-        run: npm install -g htmlhint stylelint stylelint-config-standard
+      # Install linting tools
+      - name: Install Linting Tools
+        run: npm install --global htmlhint stylelint@15 stylelint-config-standard@25
 
       # Lint HTML
       - name: Lint HTML
         run: htmlhint index.html
 
-      # Lint CSS
+      # Auto-fix CSS with stylelint
+      - name: Auto-fix CSS
+        run: stylelint "styles.css" --fix || true
+
+      # Lint CSS (after fixing)
       - name: Lint CSS
         run: stylelint "styles.css"
 
@@ -42,7 +46,7 @@ jobs:
 
       # Build Project
       - name: Build Project Artifacts
-        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel build ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
 
       # Deploy to Vercel
       - name: Deploy Project Artifacts
