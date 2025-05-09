@@ -1,0 +1,49 @@
+name: CI/CD Pipeline for Bookmark Manager
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout code
+      - uses: actions/checkout@v3
+
+      # Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      # Install dependencies for linting
+      - name: Install Dependencies
+        run: npm install -g htmlhint stylelint stylelint-config-standard
+
+      # Lint HTML
+      - name: Lint HTML
+        run: htmlhint index.html
+
+      # Lint CSS
+      - name: Lint CSS
+        run: stylelint "styles.css"
+
+      # Install Vercel CLI
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      # Pull Vercel Environment
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'production' || 'preview' }} --token=${{ secrets.VERCEL_TOKEN }}
+
+      # Build Project
+      - name: Build Project Artifacts
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+
+      # Deploy to Vercel
+      - name: Deploy Project Artifacts
+        run: vercel deploy --prebuilt ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
